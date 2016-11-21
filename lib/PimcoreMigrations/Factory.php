@@ -53,7 +53,7 @@ final class Factory
 
     public function createMigrationClassInstance($filePath)
     {
-        $className = Tool::getMigrationFileClassName(basename($filePath, '.php'));
+        $className = Tool::filePathToMigrationClassName($filePath);
 
         require_once $filePath;
 
@@ -79,6 +79,7 @@ final class Factory
 
         $migration->setFilename(basename($filePath));
         $migration->setClassName($className);
+        $migration->setVersion(Tool::filePathToMigrationVersion($filePath));
 
         return $migration;
     }

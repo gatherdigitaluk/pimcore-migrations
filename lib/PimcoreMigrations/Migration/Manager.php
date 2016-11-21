@@ -14,12 +14,26 @@ class Manager {
      */
     protected $migrations;
 
+    /**
+     * @var string $mode
+     */
     protected $mode;
+
+    /**
+     * @var int $fromVersion
+     */
+    protected $fromVersion;
+
+    /**
+     * @var int $toVersion
+     */
+    protected $toVersion;
 
     /**
      * @var $output \Symfony\Component\Console\Output\OutputInterface;
      */
     protected $output;
+
 
     public function __construct($output=null)
     {
@@ -34,6 +48,10 @@ class Manager {
     public function setMode($mode)
     {
         $this->mode = $mode;
+
+        if ($this->migrations) {
+            $this->sortMigrations();
+        }
     }
 
     /**
@@ -48,6 +66,40 @@ class Manager {
     {
         $this->output = $output;
     }
+
+    /**
+     * @return int
+     */
+    public function getFromVersion()
+    {
+        return $this->fromVersion;
+    }
+
+    /**
+     * @param int $fromVersion
+     */
+    public function setFromVersion($fromVersion)
+    {
+        $this->fromVersion = (int) $fromVersion;
+    }
+
+    /**
+     * @return int
+     */
+    public function getToVersion()
+    {
+        return $this->toVersion;
+    }
+
+    /**
+     * @param int $toVersion
+     */
+    public function setToVersion($toVersion)
+    {
+        $this->toVersion = (int) $toVersion;
+    }
+
+
 
     /**
      * @return AbstractMigration[]
@@ -74,46 +126,44 @@ class Manager {
      */
     public function migrate()
     {
+        $migrations = $this->getMigrations();
 
-        $this->output->writeln(sprintf('%d Migration files are present', count($this->migrations)));
+        $this->output->writeln(sprintf('%d Migration files are present', count($migrations)));
 
-        foreach($this->getMigrations() as $migration) {
+        foreach($migrations as $version=>$migration) {
             /**
              * @var $migration AbstractMigration
              */
 
-            if($migration->getSkip()) {
+            if($this->versionInRange($version)) {
+                if ($this->getMode() === MigrationInterface::UP) {
+                    if (!$migration->hasBeenApplied()) {
+                        $migration->run(MigrationInterface::UP);
+                        $migration->save();
+                    } else {
+                        $migration->setSkip(true);
+                    }
+                } else {
+                    // down
+                    if ($migration->hasBeenApplied()) {
+                        $migration->run(MigrationInterface::DOWN);
+                        $migration->delete();
+                    } else {
+                        $migration->setSkip(true);
+                    }
+                }
+            } else {
+                $this->output->writeln(sprintf('Migration version "%d" not in range', $migration->getVersion()));
                 continue;
             }
 
-            if ($this->getMode() === MigrationInterface::UP) {
-                if (!$migration->hasBeenApplied()) {
-                    $migration->run(MigrationInterface::UP);
-                    $migration->save();
-                } else {
-                    $migration->setSkip(true);
-                }
-            } else if ($this->getMode() === MigrationInterface::DOWN) {
-
-                if (!$migration->hasBeenApplied()) {
-                    $migration->run(MigrationInterface::DOWN);
-                    $migration->delete();
-                } else {
-                    $migration->setSkip(true);
-                }
-
-            }
-
             if ($migration->wasSuccessful()) {
-                $this->output->writeln(sprintf('Migration "%s" was successful version now "%s"',
+                $this->output->writeln(sprintf('Migration "%s" was successful version now "%d"',
                     $migration->getClassName(),
                     $migration->getVersion()
                 ));
             } else if ($migration->getSkip()) {
-                $this->output->writeln(sprintf('Migration "%s" was skipped',
-                    $migration->getClassName(),
-                    $migration->getVersion()
-                ));
+                $this->output->writeln(sprintf('Migration "%s" was skipped', $migration->getClassName()));
             } else {
 
                 $this->output->writeln(sprintf('Migration "%s" failed (reason: "%s")',
@@ -125,6 +175,27 @@ class Manager {
             }
 
         }
+    }
+
+    protected function versionInRange($version)
+    {
+        if ($this->getMode() === MigrationInterface::UP) {
+            if ($this->getFromVersion() && $version < $this->getFromVersion()) {
+                return false;
+            }
+            if ($this->getToVersion() && $version > $this->getToVersion()) {
+                return false;
+            }
+        } else {
+            if ($this->getFromVersion() && $version > $this->getFromVersion()) {
+                return false;
+            }
+            if ($this->getToVersion() && $version < $this->getToVersion()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected function loadMigrations()
@@ -150,9 +221,9 @@ class Manager {
                 throw new \Exception($basename . ' is not a valid filename for migrations');
             }
         }
-        ksort($migrations);
 
         $this->setMigrations($migrations);
+        $this->sortMigrations();
     }
 
     protected function determineMigrationVersion(AbstractMigration $migration)
@@ -160,6 +231,15 @@ class Manager {
         $parts = explode('_', $migration->getFilename());
 
         return (int) end($parts);
+    }
+
+    protected function sortMigrations()
+    {
+        if ($this->getMode() === MigrationInterface::UP) {
+            ksort($this->migrations);
+        } else {
+            krsort($this->migrations);
+        }
     }
 
 

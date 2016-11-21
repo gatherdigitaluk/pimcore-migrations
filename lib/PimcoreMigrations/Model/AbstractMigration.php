@@ -29,7 +29,7 @@ class AbstractMigration extends AbstractModel implements MigrationInterface
     public $filename;
 
     /**
-     * @var float $version
+     * @var int $version
      */
     public $version;
 
@@ -59,10 +59,12 @@ class AbstractMigration extends AbstractModel implements MigrationInterface
         return $this->version;
     }
 
-
+    /**
+     * @param $version
+     */
     public function setVersion($version)
     {
-        $this->version = $version;
+        $this->version = (int) $version;
     }
 
 
@@ -170,12 +172,12 @@ class AbstractMigration extends AbstractModel implements MigrationInterface
 
         // else do a check
         try {
-            $this->getDao()->getByClassName($this->getClassName());
+            $this->getDao()->getByVersion($this->getVersion());
         } catch(\Exception $w) {
             return false;
         }
 
-        return false;
+        return (bool) $this->getId();
     }
 
     /**
@@ -188,6 +190,23 @@ class AbstractMigration extends AbstractModel implements MigrationInterface
 
         try {
             $obj->getDao()->getByClassName($className);
+        } catch(\Exception $w) {
+            return false;
+        }
+
+        return $obj;
+    }
+
+    /**
+     * @param $version
+     * @return bool|\PimcoreMigrations\Model\AbstractMigration
+     */
+    public static function getByVersion($version)
+    {
+        $obj = new self;
+
+        try {
+            $obj->getDao()->getByVersion($version);
         } catch(\Exception $w) {
             return false;
         }

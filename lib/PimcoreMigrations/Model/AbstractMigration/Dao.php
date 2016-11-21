@@ -97,7 +97,7 @@ class Dao extends AbstractDao
     public function getByClassName($className)
     {
         if ($className === null) {
-            throw new \Exception('getById requirements not met');
+            throw new \Exception('getByClassName requirements not met');
         }
 
         $this->model->setClassName($className);
@@ -113,6 +113,31 @@ class Dao extends AbstractDao
 
         $this->assignVariablesToModel($data);
     }
+
+    /**
+     * @param string $version
+     * @throws \Exception
+     */
+    public function getByVersion($version)
+    {
+        if ($version === null) {
+            throw new \Exception('getByVersion requirements not met');
+        }
+
+        $this->model->setVersion($version);
+
+        $data = $this->db->fetchRow(
+            "SELECT * FROM {$this->tableName} WHERE version = ?",
+            [$this->model->getVersion()]
+        );
+
+        if (!$data["id"]) {
+            throw new \Exception('No Migration was found with the given version');
+        }
+
+        $this->assignVariablesToModel($data);
+    }
+
 
 
 }

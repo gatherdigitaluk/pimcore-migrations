@@ -38,22 +38,32 @@ class Tool {
      */
     public static function isValidMigrationFilename($filename)
     {
-        return is_numeric(end(explode('_', $filename)));
+        return is_numeric(self::filePathToMigrationVersion($filename));
     }
 
     /**
      * Example 12345_migration_test returns 12345MigrationTest
-     * @param $filename
+     * @param $filePath
      * @return string
      */
-    public static function getMigrationFileClassName($filename)
+    public static function filePathToMigrationClassName($filePath)
     {
-        $classparts = explode('_', $filename);
-        array_walk($classparts, function(&$val) {
+        $classParts = explode('_', basename($filePath, '.php'));
+        array_walk($classParts, function(&$val) {
             $val = ucfirst($val);
         });
 
-        return implode('', $classparts);
+        return implode('', $classParts);
+    }
+
+    /**
+     * Gets the migration version from the current filename
+     * @param $filePath
+     * @return mixed
+     */
+    public static function filePathToMigrationVersion($filePath)
+    {
+        return end(explode('_', basename($filePath, '.php')));
     }
 
 

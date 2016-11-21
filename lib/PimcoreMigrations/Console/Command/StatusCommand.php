@@ -16,6 +16,7 @@ namespace PimcoreMigrations\Console\Command;
 use PimcoreMigrations\Factory;
 use PimcoreMigrations\Migration\MigrationInterface;
 use Pimcore\Console\AbstractCommand;
+use PimcoreMigrations\Model\AbstractMigration;
 use PimcoreMigrations\Tool;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -39,9 +40,21 @@ class StatusCommand extends AbstractCommand
         if ($initialised) {
             $manager = Factory::getInstance()->getMigrationManager();
             $manager->setOutput($output);
-            $totalMigrations = count($manager->getMigrations());
+            $migrations = $manager->getMigrations();
 
-            $output->writeln($totalMigrations . ' Migrations are loaded into the application');
+            $output->writeln(count($migrations) . ' Migrations are loaded into the application');
+
+            foreach($migrations as $migration) {
+                /**
+                 * @var AbstractMigration $migration
+                 */
+                $status = $migration->hasBeenApplied() ? 'APPLIED' : 'NEW';
+
+
+                $output->writeln(sprintf('Version %s -> %s', $migration->getVersion(), $status));
+
+            }
+
         }
 
     }

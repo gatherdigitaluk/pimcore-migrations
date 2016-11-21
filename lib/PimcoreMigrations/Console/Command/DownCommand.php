@@ -17,6 +17,7 @@ use PimcoreMigrations\Factory;
 use PimcoreMigrations\Migration\MigrationInterface;
 use Pimcore\Console\AbstractCommand;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class DownCommand extends AbstractCommand
@@ -25,6 +26,8 @@ class DownCommand extends AbstractCommand
     {
         $this
             ->setName('deployment:migrations:down')
+            ->addOption('fromVersion', '--from', InputOption::VALUE_OPTIONAL, 'Migrate from a specific version', 0)
+            ->addOption('toVersion', '--to', InputOption::VALUE_OPTIONAL, 'Migrate to a specific version', 0)
             ->setDescription('Migrate your project DOWN');
     }
 
@@ -33,6 +36,8 @@ class DownCommand extends AbstractCommand
         $manager = Factory::getInstance()->getMigrationManager();
         $manager->setOutput($output);
         $manager->setMode(MigrationInterface::DOWN);
+        $manager->setFromVersion($input->getOption('fromVersion'));
+        $manager->setToVersion($input->getOption('toVersion'));
         $manager->migrate();
     }
 }

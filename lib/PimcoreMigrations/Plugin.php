@@ -33,8 +33,7 @@ class Plugin extends PluginLib\AbstractPlugin implements PluginLib\PluginInterfa
         if(!$this->isInstalled()) {
             return;
         }
-
-
+        
         if (defined('PIMCORE_CONSOLE') && PIMCORE_CONSOLE === true) {
             $this->initConsoleCommands();
         }
