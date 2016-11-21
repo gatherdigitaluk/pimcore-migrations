@@ -1,0 +1,20 @@
+{
+    "name": "gatherdigital/pimcore-migrations",
+    "description": "Pimcore database migrations plugin",
+    "type": "pimcore-plugin",
+    "license": "proprietary",
+    "keywords": ["pimcore","tags","plugin"],
+    "homepage": "https://www.gatherdigital.co.uk/agency",
+    "authors": [
+        {
+            "name": "Gather Digital Team",
+            "email": "hello@gatherdigital.co.uk",
+            "homepage": "https://www.gatherdigital.co.uk",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.6.0",
+        "pimcore/installer-plugin": "~1.3"
+    }
+}
