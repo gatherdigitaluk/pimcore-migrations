@@ -66,5 +66,29 @@ class Tool {
         return end(explode('_', basename($filePath, '.php')));
     }
 
+    public static function rebuildClasses()
+    {
+        $list = new \Pimcore\Model\Object\ClassDefinition\Listing();
+        $list->load();
+        foreach ($list->getClasses() as $class) {
+            $class->save();
+        }
+
+        $list = new \Pimcore\Model\Object\Objectbrick\Definition\Listing();
+        $list = $list->load();
+        foreach ($list as $brickDefinition) {
+            $brickDefinition->save();
+        }
+
+        $list = new \Pimcore\Model\Object\Fieldcollection\Definition\Listing();
+        $list = $list->load();
+        foreach ($list as $fc) {
+            $fc->save();
+        }
+
+        // clean the cache
+        \Pimcore\Cache::clearAll();
+    }
+
 
 }

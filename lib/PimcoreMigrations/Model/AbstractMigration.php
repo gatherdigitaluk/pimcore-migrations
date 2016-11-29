@@ -48,6 +48,16 @@ class AbstractMigration extends AbstractModel implements MigrationInterface
      */
     private $skip;
 
+    /**
+     * @var $rebuildClassesBefore bool
+     */
+    private $rebuildClassesBefore;
+
+    /**
+     * @var $rebuildClassesAfter bool
+     */
+    private $rebuildClassesAfter;
+
 
     /**
      * Returns the version number of the migration
@@ -239,7 +249,17 @@ class AbstractMigration extends AbstractModel implements MigrationInterface
     public function run($action)
     {
         try {
+
+            if ($this->getRebuildClassesBefore()) {
+                \PimcoreMigrations\Tool::rebuildClasses();
+            }
+
             $this->$action();
+
+            if ($this->getRebuildClassesAfter()) {
+                \PimcoreMigrations\Tool::rebuildClasses();
+            }
+
             $this->successful = true;
             $this->error = null;
         } catch (\Throwable $e) {
@@ -272,5 +292,39 @@ class AbstractMigration extends AbstractModel implements MigrationInterface
     {
         return $this->error;
     }
+
+    /**
+     * @return boolean
+     */
+    public function getRebuildClassesBefore()
+    {
+        return $this->rebuildClassesBefore;
+    }
+
+    /**
+     * @param boolean $rebuildClassesBefore
+     */
+    public function setRebuildClassesBefore($rebuildClassesBefore)
+    {
+        $this->rebuildClassesBefore = $rebuildClassesBefore;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getRebuildClassesAfter()
+    {
+        return $this->rebuildClassesAfter;
+    }
+
+    /**
+     * @param boolean $rebuildClassesAfter
+     */
+    public function setRebuildClassesAfter($rebuildClassesAfter)
+    {
+        $this->rebuildClassesAfter = $rebuildClassesAfter;
+    }
+
+
 
 }
