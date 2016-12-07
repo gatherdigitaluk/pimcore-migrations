@@ -2,6 +2,8 @@
 
 namespace PimcoreMigrations;
 
+use Pimcore\Model\Object\ClassDefinition;
+
 class Tool {
 
 
@@ -88,6 +90,23 @@ class Tool {
 
         // clean the cache
         \Pimcore\Cache::clearAll();
+    }
+
+    public static function addClassDefinition($className, $id=null)
+    {
+        $classDef = \Pimcore\Model\Object\ClassDefinition::getByName($className);
+        if (!$classDef) {
+            return \Pimcore\Db::get()->insert('classes', [
+                'name' => $className,
+                'id'   => $id
+            ]);
+        }
+
+        if ($id && $classDef->getId() != $id) {
+            throw new \Exception('PimcoreMigrations\FATAL: addClassDefinition ID mismatch on existing class with same name.');
+        }
+
+        return null;
     }
 
 
