@@ -103,3 +103,46 @@ or
 php console.php deployment:migrations:down --fromVersion 1000 --toVersion 1001
 ```
 
+## Use Case Example
+One of our biggest concerns is keeping development, staging and production environments intact whilst there are many changes happening
+within the database between the development team. Pimcore Migrations features a method that allows us to keep classdefinitions in sync
+whilst providing a little bit of integrity checking / feedback. A typical starting migration for our projects may be as follows:
+
+```
+/**
+  Class name follows yyyymmddXXX conventionhere, this version would always run first
+  **/
+class Migration00000000001 extends \PimcoreMigrations\Model\AbstractMigration
+{
+
+    public function init()
+    {
+        $this->setRebuildClassesAfter(true);
+    }
+
+    public function up()
+    {
+        // create classes
+        PimcoreMigrations\Tool::addClassDefinition('WebUser', 1);
+        PimcoreMigrations\Tool::addClassDefinition('Product', 2);
+        PimcoreMigrations\Tool::addClassDefinition('OnlineShopOrder', 5);
+        PimcoreMigrations\Tool::addClassDefinition('OnlineShopOrderItem', 6);
+        
+        // example to show the id is optional
+        PimcoreMigrations\Tool::addClassDefinition('ClassThatCanHaveAnyId');
+
+        // add some folders
+        $parent = \Pimcore\Model\Object\Service::createFolderByPath('/users');
+        $parent = \Pimcore\Model\Object\Service::createFolderByPath('/products');
+
+    }
+
+    public function down()
+    {
+        // cannot run down on this one
+    }
+
+
+}
+
+```
