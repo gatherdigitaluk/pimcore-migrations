@@ -70,22 +70,34 @@ class Tool {
 
     public static function rebuildClasses()
     {
-        $list = new \Pimcore\Model\Object\ClassDefinition\Listing();
-        $list->load();
-        foreach ($list->getClasses() as $class) {
-            $class->save();
+        try {
+            $list = new \Pimcore\Model\Object\ClassDefinition\Listing();
+            $list->load();
+            foreach ($list->getClasses() as $class) {
+                $class->save();
+            }
+        } catch(\Exception $e) {
+            throw new \Exception('Could not rebuild Classes: ' . $e->getMessage());
         }
 
-        $list = new \Pimcore\Model\Object\Objectbrick\Definition\Listing();
-        $list = $list->load();
-        foreach ($list as $brickDefinition) {
-            $brickDefinition->save();
+        try {
+            $list = new \Pimcore\Model\Object\Objectbrick\Definition\Listing();
+            $list = $list->load();
+            foreach ($list as $brickDefinition) {
+                $brickDefinition->save();
+            }
+        } catch(\Exception $e) {
+            throw new \Exception('Could not rebuild Bricks: ' . $e->getMessage());
         }
 
-        $list = new \Pimcore\Model\Object\Fieldcollection\Definition\Listing();
-        $list = $list->load();
-        foreach ($list as $fc) {
-            $fc->save();
+        try {
+            $list = new \Pimcore\Model\Object\Fieldcollection\Definition\Listing();
+            $list = $list->load();
+            foreach ($list as $fc) {
+                $fc->save();
+            }
+        } catch(\Exception $e) {
+            throw new \Exception('Could not rebuild FieldCollections: ' . $e->getMessage());
         }
 
         // clean the cache
@@ -94,16 +106,30 @@ class Tool {
 
     public static function addClassDefinition($className, $id=null)
     {
-        $classDef = \Pimcore\Model\Object\ClassDefinition::getByName($className);
-        if (!$classDef) {
-            return \Pimcore\Db::get()->insert('classes', [
+        // check the classdefinition exists in php
+        if (!file_exists(PIMCORE_CLASS_DIRECTORY . '/definition_' . $className . '.php')) {
+            throw new \Exception($className . ' definition file does not exist!');
+        }
+
+        // query if the class exists in the DB first
+        if ($id) {
+            $existing = \Pimcore\Db::get()->fetchRow('SELECT * FROM `classes` WHERE name = ? OR id = ?', [$className, $id]);
+        } else {
+            $existing = \Pimcore\Db::get()->fetchRow('SELECT * FROM `classes` WHERE name = ?', [$className]);
+        }
+
+        if (!$existing['id']) {
+            $db = \Pimcore\Db::get();
+
+            $db->insert('classes', [
                 'name' => $className,
                 'id'   => $id
             ]);
+
         }
 
-        if ($id && $classDef->getId() != $id) {
-            throw new \Exception('PimcoreMigrations\FATAL: addClassDefinition ID mismatch on existing class with same name.');
+        if ($existing && ($existing['id'] != $id || $existing['name'] != $className)) {
+            throw new \Exception('PimcoreMigrations\FATAL: addClassDefinition ID/name mismatch on existing class with same id/name.');
         }
 
         return null;
