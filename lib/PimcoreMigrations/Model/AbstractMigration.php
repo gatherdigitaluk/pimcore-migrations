@@ -248,6 +248,8 @@ class AbstractMigration extends AbstractModel implements MigrationInterface
      */
     public function run($action)
     {
+        \Pimcore::collectGarbage();
+        
         try {
 
             if ($this->getRebuildClassesBefore()) {
