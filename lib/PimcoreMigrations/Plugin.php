@@ -15,6 +15,7 @@ namespace PimcoreMigrations;
 
 use Pimcore\API\Plugin as PluginLib;
 use PimcoreMigrations\Console\Command\DownCommand;
+use PimcoreMigrations\Console\Command\RunCommand;
 use PimcoreMigrations\Console\Command\StatusCommand;
 use PimcoreMigrations\Console\Command\UpCommand;
 
@@ -76,7 +77,8 @@ class Plugin extends PluginLib\AbstractPlugin implements PluginLib\PluginInterfa
         return [
             new StatusCommand(),
             new UpCommand(),
-            new DownCommand()
+            new DownCommand(),
+            new RunCommand()
         ];
     }
 

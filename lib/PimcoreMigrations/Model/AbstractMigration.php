@@ -155,7 +155,7 @@ class AbstractMigration extends AbstractModel implements MigrationInterface
     }
 
 
-    protected function init()
+    public function init()
     {
 
     }
@@ -251,10 +251,6 @@ class AbstractMigration extends AbstractModel implements MigrationInterface
         \Pimcore::collectGarbage();
         
         try {
-
-            if ($this->getRebuildClassesBefore()) {
-                \PimcoreMigrations\Tool::rebuildClasses();
-            }
 
             $this->$action();
 

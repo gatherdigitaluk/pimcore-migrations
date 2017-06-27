@@ -136,42 +136,23 @@ class Manager {
              */
 
             if($this->versionInRange($version)) {
-                if ($this->getMode() === MigrationInterface::UP) {
-                    if (!$migration->hasBeenApplied()) {
-                        $migration->run(MigrationInterface::UP);
-                        $migration->save();
-                    } else {
-                        $migration->setSkip(true);
-                    }
-                } else {
-                    // down
-                    if ($migration->hasBeenApplied()) {
-                        $migration->run(MigrationInterface::DOWN);
-                        $migration->delete();
-                    } else {
-                        $migration->setSkip(true);
-                    }
-                }
+                $this->output->write('Starting Migration ' . $migration->getVersion());
+                $result = $this->runInSeparateProcess($this->getConsoleCommandPath($migration->getFilename()));
             } else {
                 $this->output->writeln(sprintf('Migration version "%d" not in range', $migration->getVersion()));
                 continue;
             }
 
-            if ($migration->wasSuccessful()) {
-                $this->output->writeln(sprintf('Migration "%s" was successful version now "%d"',
-                    $migration->getClassName(),
-                    $migration->getVersion()
-                ));
-            } else if ($migration->getSkip()) {
-                $this->output->writeln(sprintf('Migration "%s" was skipped', $migration->getClassName()));
+            if ($result[0] == 0) {
+                $this->output->writeln(' - <info>Success!</info>');
+                // success!
+            } else if ($result[0] == 2) {
+                $this->output->writeln(' - <comment>Skipped!</comment>');
+                // skipped!
             } else {
-
-                $this->output->writeln(sprintf('Migration "%s" failed (reason: "%s")',
-                    $migration->getClassName(),
-                    $migration->getError()
-                ));
-
-                throw new \Exception('Error Migrating ' . $this->getMode() . '!');
+                $this->output->writeln(' - <error>Migration Failed :-(</error>');
+                $this->output->writeln('<comment>' . implode('\n', $result[1]) . '</comment>');
+                throw new \Exception('Migration Failure, exit code ' . $result);
             }
 
         }
@@ -210,6 +191,7 @@ class Manager {
             if (Tool::isValidMigrationFilename($basename)) {
 
                 $migration = Factory::getInstance()->createMigrationClassInstance($filePath);
+                $migration->init();
 
                 $version = $this->determineMigrationVersion($migration);
                 $migration->setVersion($version);
@@ -240,6 +222,24 @@ class Manager {
         } else {
             krsort($this->migrations);
         }
+    }
+
+    protected function getConsoleCommandPath($migrationFile)
+    {
+        $cmdPath = PIMCORE_PATH . DIRECTORY_SEPARATOR . 'cli' . DIRECTORY_SEPARATOR . 'console.php';
+        $env = \Pimcore\Config::getEnvironment();
+        if ($env) {
+            $cmdPath .= '--environment=' . $env;
+        }
+
+        return $cmdPath . ' deployment:migrations:run "'.$migrationFile.'" ' . $this->getMode();
+    }
+
+    protected function runInSeparateProcess($command)
+    {
+        $ll = exec($command, $output, $code);
+
+        return [$code,$output];
     }
 
 
