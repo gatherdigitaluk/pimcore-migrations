@@ -135,11 +135,11 @@ class Manager {
              * @var $migration AbstractMigration
              */
 
-            if($this->versionInRange($version)) {
+            if($this->versionInRange($version) && !$migration->hasBeenApplied()) {
                 $this->output->write('Starting Migration ' . $migration->getVersion());
                 $result = $this->runInSeparateProcess($this->getConsoleCommandPath($migration->getFilename()));
             } else {
-                $this->output->writeln(sprintf('Migration version "%d" not in range', $migration->getVersion()));
+                $this->output->writeln(sprintf('Migration version "%d" skipped', $migration->getVersion()));
                 continue;
             }
 
@@ -152,7 +152,7 @@ class Manager {
             } else {
                 $this->output->writeln(' - <error>Migration Failed :-(</error>');
                 $this->output->writeln('<comment>' . implode('\n', $result[1]) . '</comment>');
-                throw new \Exception('Migration Failure, exit code ' . $result);
+                throw new \Exception('Migration Failure, exit code ' . $result[0]);
             }
 
         }
@@ -229,10 +229,10 @@ class Manager {
         $cmdPath = PIMCORE_PATH . DIRECTORY_SEPARATOR . 'cli' . DIRECTORY_SEPARATOR . 'console.php';
         $env = \Pimcore\Config::getEnvironment();
         if ($env) {
-            $cmdPath .= '--environment=' . $env;
+            $env = '--environment=' . $env;
         }
 
-        return $cmdPath . ' deployment:migrations:run "'.$migrationFile.'" ' . $this->getMode();
+        return sprintf('php %s %s deployment:migrations:run %s %s', $cmdPath, $env, $migrationFile, $this->getMode());
     }
 
     protected function runInSeparateProcess($command)
